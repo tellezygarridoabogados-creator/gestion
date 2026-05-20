@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de Causas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3EE;
+  --surface: #FFFFFF;
+  --surface2: #F0EDE6;
+  --border: #DDD9D0;
+  --border2: #C8C3B8;
+  --text: #1A1814;
+  --text2: #5A5650;
+  --text3: #8C887E;
+  --accent: #1D3557;
+  --accent2: #457B9D;
+  --accent-light: #E8F0F7;
+  --danger: #9B2226;
+  --danger-light: #FBE9EA;
+  --warn: #996600;
+  --warn-light: #FFF7E6;
+  --success: #2D6A4F;
+  --success-light: #E8F5EF;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+}
+
+/* ── Layout ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.topbar {
+  background: var(--accent);
+  color: #fff;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  letter-spacing: -0.3px;
+}
+
+.topbar-brand span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.6;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-left: 1px solid rgba(255,255,255,0.3);
+  padding-left: 10px;
+  margin-left: 4px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 4px 12px 4px 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-badge:hover { background: rgba(255,255,255,0.22); }
+
+.avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: #fff;
+}
+
+.nav-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.nav-tab {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-tab:hover { color: var(--text2); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-badge {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.tab-badge.danger { background: var(--danger-light); color: var(--danger); }
+.tab-badge.warn { background: var(--warn-light); color: var(--warn); }
+
+.main { flex: 1; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+/* ── Panels ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Cards & Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left { display: flex; align-items: center; gap: 12px; flex: 1; flex-wrap: wrap; }
+.toolbar-right { display: flex; gap: 10px; }
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  max-width: 380px;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+}
+
+.search-box input {
+  width: 100%;
+  padding: 9px 12px 9px 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-box input:focus { border-color: var(--accent2); }
+
+select, input[type="date"], input[type="text"], input[type="email"], input[type="tel"], textarea {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.filter-select {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.btn {
+  padding: 9px 16px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: #152840; }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--surface2); }
+
+.btn-danger {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid #F5C2C3;
+}
+.btn-danger:hover { background: #F5C2C3; }
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* ── Table ── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+thead tr {
+  background: var(--surface2);
+}
+
+th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+tr:last-child td { border-bottom: none; }
+
+tbody tr {
+  transition: background 0.1s;
+  cursor: pointer;
+}
+tbody tr:hover { background: #F8F6F2; }
+
+.td-cliente {
+  font-weight: 500;
+}
+.td-causa {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Status badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-activo { background: var(--success-light); color: var(--success); }
+.badge-terminado { background: var(--surface2); color: var(--text3); }
+.badge-suspendido { background: var(--warn-light); color: var(--warn); }
+.badge-judicial { background: var(--accent-light); color: var(--accent); }
+.badge-administrativo { background: #EEF4F0; color: #2D6A4F; }
+.badge-vencido { background: var(--danger-light); color: var(--danger); }
+.badge-proximo { background: var(--warn-light); color: var(--warn); }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+
+/* ── Modal overlay ── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,15,20,0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 780px;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-16px);
+  transition: transform 0.2s;
+  margin: auto;
+}
+
+.overlay.open .modal { transform: translateY(0); }
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-footer-right { display: flex; gap: 10px; }
+
+.close-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.close-btn:hover { background: var(--border); }
+
+/* ── Form grid ── */
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid.cols-1 { grid-template-columns: 1fr; }
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group.span-2 { grid-column: span 2; }
+
+label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+.required::after { content: ' *'; color: var(--danger); }
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+select,
+textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.calendar-note {
+  font-size: 11px;
+  color: var(--accent2);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Detail view ── */
+.detail-view {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.detail-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.detail-card-header {
+  padding: 16px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-card-body { padding: 16px 20px; }
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.detail-field:last-child { margin-bottom: 0; }
+
+.detail-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* ── Historial timeline ── */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timeline-entry {
+  display: flex;
+  gap: 14px;
+  position: relative;
+}
+
+.timeline-entry + .timeline-entry {
+  margin-top: 12px;
+}
+
+.timeline-dot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 24px;
+}
+
+.timeline-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent2);
+  border: 2px solid var(--surface);
+  outline: 2px solid var(--accent2);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.timeline-line {
+  flex: 1;
+  width: 1px;
+  background: var(--border);
+  margin: 4px 0;
+  min-height: 16px;
+}
+
+.timeline-content {
+  flex: 1;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 4px;
+}
+
+.timeline-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-user {
+  font-weight: 600;
+  color: var(--accent2);
+}
+
+.timeline-text {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ── Pendientes ── */
+.pendiente-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pendiente-item:last-child { border-bottom: none; }
+
+.pendiente-check {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border2);
+  border-radius: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+
+.pendiente-check.done { background: var(--success); border-color: var(--success); }
+
+.pendiente-text { font-size: 13.5px; flex: 1; }
+.pendiente-text.done-text {
+  text-decoration: line-through;
+  color: var(--text3);
+}
+
+/* ── Dashboard stats ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-family: 'DM Serif Display', serif;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ── Config panel ── */
+.config-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.config-header {
+  padding: 14px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.config-body { padding: 20px; }
+
+.google-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #FFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.15s;
+}
+
+.google-badge:hover { box-shadow: var(--shadow-md); }
+
+.input-url {
+  width: 100%;
+  max-width: 480px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  outline: none;
+}
+
+.input-url:focus { border-color: var(--accent2); }
+
+.alert-box {
+  background: var(--accent-light);
+  border: 1px solid #B5CFDF;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--accent);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.alert-box.warn {
+  background: var(--warn-light);
+  border-color: #DDB97A;
+  color: #7A5200;
+}
+
+/* ── Vencimientos panel ── */
+.plazo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+  margin-bottom: 10px;
+}
+
+.plazo-card:hover { box-shadow: var(--shadow-md); }
+
+.plazo-date-col {
+  text-align: center;
+  min-width: 52px;
+}
+
+.plazo-dia {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.plazo-mes {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  font-weight: 600;
+}
+
+.plazo-info { flex: 1; min-width: 0; }
+.plazo-causa {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plazo-cliente { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+.plazo-dias {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.plazo-vencido { background: var(--danger-light); color: var(--danger); }
+.plazo-hoy { background: var(--warn-light); color: var(--warn); }
+.plazo-proximo { background: var(--accent-light); color: var(--accent); }
+.plazo-futuro { background: var(--surface2); color: var(--text3); }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+.empty-title { font-size: 16px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; }
+
+/* ── Historial textarea expandible ── */
+.historial-list {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .main { padding: 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+  .form-group.span-2 { grid-column: span 1; }
+  .detail-view { grid-template-columns: 1fr; }
+  th:nth-child(n+5), td:nth-child(n+5) { display: none; }
+}
+
+/* ── Sync indicator ── */
+.sync-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4CAF50;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.sync-label {
+  font-size: 11px;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Historial input area */
+.new-entry-area {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.new-entry-area textarea {
+  background: var(--surface);
+  margin-bottom: 8px;
+}
+
+.pendientes-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pendientes-add input {
+  flex: 1;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Top bar ── -->
+<div class="topbar">
+  <div class="topbar-brand">
+    ⚖ Gestor de Causas
+    <span>Estudio Jurídico</span>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-label">
+      <div class="sync-dot" id="syncDot" style="background:#aaa;animation:none"></div>
+      <span id="syncLabel">Sin conexión Google</span>
+    </div>
+    <div class="user-badge" onclick="toggleUser()">
+      <div class="avatar" id="userAvatar">U1</div>
+      <span id="userName">Usuario 1</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Nav tabs ── -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showPanel('causas')">
+    ⚖ Causas
+    <div class="tab-badge" id="badgeCausas">0</div>
+  </div>
+  <div class="nav-tab" onclick="showPanel('vencimientos')">
+    📅 Vencimientos
+    <div class="tab-badge warn" id="badgeVenc">0</div>
+  </div>
+  <div class="nav-tab" onclick="showPanel('pendientes')">
+    ✅ Pendientes
+    <div class="tab-badge danger" id="badgePend">0</div>
+  </div>
+  <div class="nav-tab" onclick="showPanel('config')">
+    ⚙ Configuración
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+
+<!-- ══ PANEL CAUSAS ══ -->
+<div class="panel active" id="panel-causas">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" placeholder="Buscar cliente, causa, RIT, RUC…" id="searchInput" oninput="renderTable()">
+      </div>
+      <select class="filter-select" id="filterTipo" onchange="renderTable()">
+        <option value="">Todos los tipos</option>
+        <option value="Judicial">Judicial</option>
+        <option value="Administrativa">Administrativa</option>
+      </select>
+      <select class="filter-select" id="filterEstado" onchange="renderTable()">
+        <option value="">Todos los estados</option>
+        <option value="Activo">Activo</option>
+        <option value="Suspendido">Suspendido</option>
+        <option value="Terminado">Terminado</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-secondary" onclick="exportCSV()">↓ Exportar</button>
+      <button class="btn btn-primary" onclick="openNew()">+ Nueva causa</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Causa</th>
+          <th>Tipo</th>
+          <th>Tribunal / Org.</th>
+          <th>RIT / RUC</th>
+          <th>Estado</th>
+          <th>Vencimiento</th>
+          <th>Modificado por</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="causasBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="empty-icon">⚖</div>
+      <div class="empty-title">Sin causas registradas</div>
+      <div class="empty-sub">Haz clic en "Nueva causa" para comenzar</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL VENCIMIENTOS ══ -->
+<div class="panel" id="panel-vencimientos">
+  <div style="margin-bottom:20px">
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">
+      Causas ordenadas por fecha de vencimiento más próxima. Los plazos marcados se sincronizan con Google Calendar.
+    </div>
+    <div id="vencimientosContainer"></div>
+  </div>
+</div>
+
+<!-- ══ PANEL PENDIENTES ══ -->
+<div class="panel" id="panel-pendientes">
+  <div style="margin-bottom:16px;font-size:13px;color:var(--text3)">
+    Todas las tareas pendientes agrupadas por causa.
+  </div>
+  <div id="pendientesContainer"></div>
+</div>
+
+<!-- ══ PANEL CONFIG ══ -->
+<div class="panel" id="panel-config">
+
+  <div class="config-section">
+    <div class="config-header">☁ Conexión Google Sheets (base de datos)</div>
+    <div class="config-body">
+      <div class="alert-box">
+        <strong>Cómo conectar:</strong> Copia la URL de tu Google Apps Script Web App en el campo de abajo. 
+        El script actúa como API entre esta app y tu Google Sheets. 
+        Ver instrucciones completas en el documento adjunto.
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+        <input class="input-url" type="text" id="sheetsUrl" placeholder="https://script.google.com/macros/s/…/exec" 
+          value="https://script.google.com/macros/s/AKfycbxpevrFDKVSIvXmzVKTmbntbWW0tQdXXogqCH2YM21YJq6hR6qLmHiQ6muIeqYjfLR0fw/exec" oninput="saveConfig()">
+        <button class="btn btn-secondary" onclick="testConnection()">Probar</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3)">
+        El acceso Google queda en tu propio proyecto — esta aplicación no almacena credenciales.
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="config-header">📅 Conexión Google Calendar</div>
+    <div class="config-body">
+      <div class="alert-box">
+        El script de Apps Script puede crear eventos automáticamente en tu calendario 
+        al guardar un plazo. Activa esto desde el script y el calendario de destino se configura allí.
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="calendarOn" onchange="saveConfig()" style="width:16px;height:16px">
+        Sincronizar plazos con Google Calendar
+      </label>
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="config-header">👤 Usuarios</div>
+    <div class="config-body">
+      <div class="form-grid" style="max-width:480px">
+        <div class="form-group">
+          <label>Nombre Usuario 1</label>
+          <input type="text" id="user1Name" value="Usuario 1" oninput="saveConfig();updateUserDisplay()">
+        </div>
+        <div class="form-group">
+          <label>Nombre Usuario 2</label>
+          <input type="text" id="user2Name" value="Usuario 2" oninput="saveConfig()">
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:13px;color:var(--text3)">
+        Al iniciar sesión se selecciona el usuario activo. Cada modificación queda registrada con su nombre y fecha.
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="config-header">📋 Instrucciones Apps Script</div>
+    <div class="config-body">
+      <div class="alert-box warn">
+        <strong>Paso a paso para activar Google Sheets:</strong><br><br>
+        1. Ve a <strong>script.google.com</strong> → Nuevo proyecto<br>
+        2. Pega el código del archivo <code>apps-script-backend.js</code> adjunto<br>
+        3. Configura la variable <code>SHEET_ID</code> con el ID de tu Google Sheet<br>
+        4. Ve a Implementar → Nueva implementación → Aplicación web<br>
+        5. Ejecutar como: <em>Yo</em> · Acceso: <em>Cualquier persona</em><br>
+        6. Copia la URL generada y pégala arriba<br><br>
+        <strong>Google Sheets:</strong> Crea una hoja llamada <code>Causas</code> con las columnas en el orden indicado en el código.
+      </div>
+      <button class="btn btn-secondary" onclick="downloadScript()">↓ Descargar apps-script-backend.js</button>
+    </div>
+  </div>
+
+</div>
+
+</div><!-- end main -->
+</div><!-- end app -->
+
+<!-- ══ MODAL CAUSA ══ -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+<div class="modal" id="modal">
+  <div class="modal-header">
+    <div>
+      <div class="modal-title" id="modalTitle">Nueva Causa</div>
+      <div class="modal-subtitle" id="modalSubtitle">Ingresa los datos de la causa</div>
+    </div>
+    <button class="close-btn" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modalBody">
+    <!-- injected by JS -->
+  </div>
+  <div class="modal-footer">
+    <div id="modalFooterLeft" style="font-size:12px;color:var(--text3)"></div>
+    <div class="modal-footer-right">
+      <button class="btn btn-danger" id="deleteBtn" onclick="deleteCausa()" style="display:none">🗑 Eliminar causa</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveCausa()">Guardar causa</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ════════════════════════════════
+//  STATE
+// ════════════════════════════════
+let causas = [];
+let editingId = null;
+let currentUser = 1;
+let config = {};
+
+const ESTADOS = ['Activo','Suspendido','Terminado'];
+const TIPOS = ['Judicial','Administrativa'];
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// ════════════════════════════════
+//  INIT
+// ════════════════════════════════
+function init() {
+  loadConfig();
+  loadLocal();
+  renderAll();
+  updateUserDisplay();
+}
+
+function loadConfig() {
+  try {
+    var defaultUrl = "https://script.google.com/macros/s/AKfycbxpevrFDKVSIvXmzVKTmbntbWW0tQdXXogqCH2YM21YJq6hR6qLmHiQ6muIeqYjfLR0fw/exec";
+  config = JSON.parse(localStorage.getItem('gc_config') || '{}');
+    if (config.user1Name) document.getElementById('user1Name').value = config.user1Name;
+    if (config.user2Name) document.getElementById('user2Name').value = config.user2Name;
+    document.getElementById('sheetsUrl').value = config.sheetsUrl || defaultUrl;
+    if (config.calendarOn) document.getElementById('calendarOn').checked = config.calendarOn;
+  } catch(e) {}
+}
+
+function saveConfig() {
+  config = {
+    user1Name: document.getElementById('user1Name').value,
+    user2Name: document.getElementById('user2Name').value,
+    sheetsUrl: document.getElementById('sheetsUrl').value,
+    calendarOn: document.getElementById('calendarOn').checked,
+  };
+  localStorage.setItem('gc_config', JSON.stringify(config));
+}
+
+function loadLocal() {
+  try {
+    causas = JSON.parse(localStorage.getItem('gc_causas') || '[]');
+  } catch(e) { causas = []; }
+}
+
+function saveLocal() {
+  localStorage.setItem('gc_causas', JSON.stringify(causas));
+}
+
+function getUserName(n) {
+  if (n === 1) return config.user1Name || 'Usuario 1';
+  return config.user2Name || 'Usuario 2';
+}
+
+function updateUserDisplay() {
+  const name = getUserName(currentUser);
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userAvatar').textContent = name.slice(0,2).toUpperCase();
+}
+
+function toggleUser() {
+  currentUser = currentUser === 1 ? 2 : 1;
+  updateUserDisplay();
+}
+
+// ════════════════════════════════
+//  NAV
+// ════════════════════════════════
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'vencimientos') renderVencimientos();
+  if (name === 'pendientes') renderPendientesPanel();
+}
+
+// ════════════════════════════════
+//  RENDER TABLE
+// ════════════════════════════════
+function renderAll() {
+  renderTable();
+  renderBadges();
+}
+
+function renderTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const tipo = document.getElementById('filterTipo').value;
+  const estado = document.getElementById('filterEstado').value;
+
+  let filtered = causas.filter(c => {
+    const text = [c.cliente, c.rut, c.causa, c.rit, c.ruc, c.tribunal].join(' ').toLowerCase();
+    return (!search || text.includes(search))
+        && (!tipo || c.tipo === tipo)
+        && (!estado || c.estado === estado);
+  });
+
+  const tbody = document.getElementById('causasBody');
+  const empty = document.getElementById('emptyState');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(c => {
+    const plazoInfo = getPlazoInfo(c.plazo);
+    const pendCount = (c.pendientes || []).filter(p => !p.done).length;
+    return `<tr onclick="openEdit('${c.id}')">
+      <td class="td-cliente">
+        ${c.cliente}
+        ${c.rut ? `<div style="font-size:11px;color:var(--text3)">${c.rut}</div>` : ''}
+      </td>
+      <td class="td-causa" title="${c.causa || ''}">${c.causa || '—'}</td>
+      <td><span class="badge badge-${(c.tipo||'').toLowerCase()}">${c.tipo || '—'}</span></td>
+      <td style="font-size:13px">${c.tribunal || '—'}</td>
+      <td style="font-size:12px;color:var(--text3)">${c.rit || ''}${c.rit && c.ruc ? '<br>' : ''}${c.ruc || ''}</td>
+      <td><span class="badge badge-${(c.estado||'activo').toLowerCase()}">${c.estado || 'Activo'}</span></td>
+      <td>${plazoInfo ? `<span class="badge ${plazoInfo.cls}">${plazoInfo.label}</span>` : '—'}</td>
+      <td style="font-size:12px;color:var(--text3)">
+        ${c.lastUser || '—'}
+        ${c.lastDate ? `<div style="font-size:11px">${fmtDate(c.lastDate)}</div>` : ''}
+      </td>
+      <td>
+        ${pendCount > 0 ? `<span class="badge badge-vencido" title="Pendientes">${pendCount} pend.</span>` : ''}
+        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openEdit('${c.id}')">Editar</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderBadges();
+}
+
+function getPlazoInfo(plazo) {
+  if (!plazo) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = new Date(plazo + 'T00:00:00');
+  const diff = Math.round((d - hoy) / 86400000);
+  if (diff < 0) return { cls: 'badge-vencido', label: 'Vencido' };
+  if (diff === 0) return { cls: 'badge-proximo badge-warn', label: 'Hoy' };
+  if (diff <= 7) return { cls: 'badge-proximo', label: `${diff}d` };
+  return { cls: '', label: fmtDate(plazo) };
+}
+
+function renderBadges() {
+  document.getElementById('badgeCausas').textContent = causas.length;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const venc = causas.filter(c => {
+    if (!c.plazo) return false;
+    const d = new Date(c.plazo + 'T00:00:00');
+    return (d - hoy) / 86400000 <= 7;
+  }).length;
+  document.getElementById('badgeVenc').textContent = venc;
+  const pend = causas.reduce((acc, c) => acc + (c.pendientes||[]).filter(p=>!p.done).length, 0);
+  document.getElementById('badgePend').textContent = pend;
+}
+
+// ════════════════════════════════
+//  VENCIMIENTOS
+// ════════════════════════════════
+function renderVencimientos() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const conPlazo = causas.filter(c => c.plazo).sort((a,b) => new Date(a.plazo) - new Date(b.plazo));
+  const el = document.getElementById('vencimientosContainer');
+  if (!conPlazo.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">Sin plazos registrados</div></div>';
+    return;
+  }
+  el.innerHTML = conPlazo.map(c => {
+    const d = new Date(c.plazo + 'T00:00:00');
+    const diff = Math.round((d - hoy) / 86400000);
+    let clsDias, labelDias;
+    if (diff < 0) { clsDias = 'plazo-vencido'; labelDias = `Vencido hace ${-diff}d`; }
+    else if (diff === 0) { clsDias = 'plazo-hoy'; labelDias = 'Hoy'; }
+    else if (diff <= 7) { clsDias = 'plazo-proximo'; labelDias = `En ${diff} días`; }
+    else { clsDias = 'plazo-futuro'; labelDias = `En ${diff} días`; }
+    return `<div class="plazo-card" onclick="openEdit('${c.id}')">
+      <div class="plazo-date-col">
+        <div class="plazo-dia">${d.getDate()}</div>
+        <div class="plazo-mes">${MESES[d.getMonth()]} ${d.getFullYear()}</div>
+      </div>
+      <div class="plazo-info">
+        <div class="plazo-causa">${c.causa || 'Sin nombre'}</div>
+        <div class="plazo-cliente">${c.cliente} · ${c.tipo || ''} · ${c.tribunal || ''}</div>
+      </div>
+      <div class="plazo-dias ${clsDias}">${labelDias}</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════
+//  PENDIENTES PANEL
+// ════════════════════════════════
+function renderPendientesPanel() {
+  const el = document.getElementById('pendientesContainer');
+  const conPend = causas.filter(c => (c.pendientes||[]).length > 0);
+  if (!conPend.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Sin tareas pendientes</div></div>';
+    return;
+  }
+  el.innerHTML = conPend.map(c => {
+    const pendList = (c.pendientes || []);
+    const activos = pendList.filter(p=>!p.done).length;
+    return `<div class="detail-card" style="margin-bottom:16px">
+      <div class="detail-card-header">
+        <div>
+          <div style="font-weight:500">${c.causa || 'Sin nombre'}</div>
+          <div style="font-size:12px;color:var(--text3)">${c.cliente}</div>
+        </div>
+        <span class="badge ${activos > 0 ? 'badge-vencido' : 'badge-terminado'}">${activos} pendiente${activos !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="detail-card-body">
+        ${pendList.map((p,i) => `
+          <div class="pendiente-item">
+            <div class="pendiente-check ${p.done ? 'done' : ''}" onclick="togglePendienteFromPanel('${c.id}',${i})">
+              ${p.done ? '✓' : ''}
+            </div>
+            <div class="pendiente-text ${p.done ? 'done-text' : ''}">${p.texto}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePendienteFromPanel(id, idx) {
+  const c = causas.find(x => x.id === id);
+  if (!c) return;
+  c.pendientes[idx].done = !c.pendientes[idx].done;
+  c.lastUser = getUserName(currentUser);
+  c.lastDate = new Date().toISOString();
+  saveLocal();
+  renderAll();
+  renderPendientesPanel();
+  syncToSheets(c);
+}
+
+// ════════════════════════════════
+//  MODAL FORM
+// ════════════════════════════════
+function openNew() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Nueva Causa';
+  document.getElementById('modalSubtitle').textContent = 'Ingresa los datos de la causa';
+  document.getElementById('modalFooterLeft').textContent = '';
+  document.getElementById('saveBtn').textContent = 'Guardar causa';
+  document.getElementById('deleteBtn').style.display = 'none';
+  renderForm({});
+  openModal();
+}
+
+function openEdit(id) {
+  const c = causas.find(x => x.id === id);
+  if (!c) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = c.causa || 'Editar causa';
+  document.getElementById('modalSubtitle').textContent = `${c.cliente} · ${c.tipo || ''}`;
+  document.getElementById('modalFooterLeft').textContent =
+    c.lastUser ? `Última modificación: ${c.lastUser} · ${fmtDate(c.lastDate)}` : '';
+  document.getElementById('saveBtn').textContent = 'Guardar cambios';
+  document.getElementById('deleteBtn').style.display = 'inline-flex';
+  renderForm(c);
+  openModal();
+}
+
+function renderForm(c) {
+  const pends = (c.pendientes || []);
+  const hist = (c.historial || []);
+  document.getElementById('modalBody').innerHTML = `
+  <div class="form-section">
+    <div class="form-section-title">Datos del Cliente</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="required">Nombre cliente</label>
+        <input type="text" id="f_cliente" value="${esc(c.cliente||'')}" placeholder="Razón social o nombre">
+      </div>
+      <div class="form-group">
+        <label>RUT</label>
+        <input type="text" id="f_rut" value="${esc(c.rut||'')}" placeholder="12.345.678-9">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="f_email" value="${esc(c.email||'')}" placeholder="correo@cliente.cl">
+      </div>
+      <div class="form-group">
+        <label>Celular</label>
+        <input type="tel" id="f_celular" value="${esc(c.celular||'')}" placeholder="+56 9 1234 5678">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Datos de la Causa</div>
+    <div class="form-grid">
+      <div class="form-group span-2">
+        <label class="required">Nombre de la causa</label>
+        <input type="text" id="f_causa" value="${esc(c.causa||'')}" placeholder="Descripción de la causa">
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="f_tipo">
+          ${TIPOS.map(t => `<option ${c.tipo===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="f_estado">
+          ${ESTADOS.map(e => `<option ${c.estado===e?'selected':''}>${e}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tribunal / Organismo</label>
+        <input type="text" id="f_tribunal" value="${esc(c.tribunal||'')}" placeholder="Nombre del tribunal">
+      </div>
+      <div class="form-group">
+        <label>RIT</label>
+        <input type="text" id="f_rit" value="${esc(c.rit||'')}" placeholder="Nº RIT">
+      </div>
+      <div class="form-group">
+        <label>RUC</label>
+        <input type="text" id="f_ruc" value="${esc(c.ruc||'')}" placeholder="Nº RUC">
+      </div>
+      <div class="form-group">
+        <label>Plazo / Vencimiento</label>
+        <input type="date" id="f_plazo" value="${c.plazo||''}">
+        <div class="calendar-note">📅 Se agregará a Google Calendar al guardar</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Tareas Pendientes</div>
+    <div id="pendList">
+      ${pends.map((p,i) => `
+        <div class="pendiente-item" id="pend-${i}">
+          <div class="pendiente-check ${p.done?'done':''}" onclick="togglePendienteForm(${i})">
+            ${p.done?'✓':''}
+          </div>
+          <div class="pendiente-text ${p.done?'done-text':''}" id="pend-text-${i}">${esc(p.texto)}</div>
+          <button class="btn btn-sm btn-danger" onclick="removePendiente(${i})">✕</button>
+        </div>
+      `).join('')}
+    </div>
+    <div class="pendientes-add">
+      <input type="text" id="newPendiente" placeholder="Nueva tarea pendiente…" onkeydown="if(event.key==='Enter')addPendiente()">
+      <button class="btn btn-secondary btn-sm" onclick="addPendiente()">+ Agregar</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Historial / Observaciones</div>
+    <div class="historial-list">
+      ${hist.slice().reverse().map(h => `
+        <div class="timeline-entry">
+          <div class="timeline-dot-col">
+            <div class="timeline-dot"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-meta">
+              <span class="timeline-user">${esc(h.user)}</span>
+              <span>${fmtDate(h.date)}</span>
+            </div>
+            <div class="timeline-text">${esc(h.texto)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="new-entry-area">
+      <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px">Nueva entrada de historial</div>
+      <textarea id="newHistorial" rows="2" placeholder="Escribe una observación, novedad o acción realizada…"></textarea>
+      <div style="font-size:11px;color:var(--text3)">Se registrará con tu nombre y la fecha actual al guardar.</div>
+    </div>
+  </div>
+  `;
+
+  // Store temp pendientes
+  window._pendTemp = [...pends];
+}
+
+// Pendiente helpers en form
+function togglePendienteForm(i) {
+  window._pendTemp[i].done = !window._pendTemp[i].done;
+  renderPendienteItem(i);
+}
+
+function renderPendienteItem(i) {
+  const p = window._pendTemp[i];
+  const el = document.getElementById(`pend-${i}`);
+  if (!el) return;
+  el.querySelector('.pendiente-check').className = 'pendiente-check ' + (p.done?'done':'');
+  el.querySelector('.pendiente-check').textContent = p.done ? '✓' : '';
+  el.querySelector('.pendiente-text').className = 'pendiente-text ' + (p.done?'done-text':'');
+}
+
+function addPendiente() {
+  const inp = document.getElementById('newPendiente');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  window._pendTemp.push({ texto: txt, done: false });
+  inp.value = '';
+  // Re-render list
+  const list = document.getElementById('pendList');
+  list.innerHTML = window._pendTemp.map((p,i) => `
+    <div class="pendiente-item" id="pend-${i}">
+      <div class="pendiente-check ${p.done?'done':''}" onclick="togglePendienteForm(${i})">${p.done?'✓':''}</div>
+      <div class="pendiente-text ${p.done?'done-text':''}" id="pend-text-${i}">${esc(p.texto)}</div>
+      <button class="btn btn-sm btn-danger" onclick="removePendiente(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removePendiente(i) {
+  window._pendTemp.splice(i, 1);
+  // re-render
+  const list = document.getElementById('pendList');
+  list.innerHTML = window._pendTemp.map((p,idx) => `
+    <div class="pendiente-item" id="pend-${idx}">
+      <div class="pendiente-check ${p.done?'done':''}" onclick="togglePendienteForm(${idx})">${p.done?'✓':''}</div>
+      <div class="pendiente-text ${p.done?'done-text':''}" id="pend-text-${idx}">${esc(p.texto)}</div>
+      <button class="btn btn-sm btn-danger" onclick="removePendiente(${idx})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════
+//  SAVE
+// ════════════════════════════════
+function saveCausa() {
+  const cliente = document.getElementById('f_cliente').value.trim();
+  const causa = document.getElementById('f_causa').value.trim();
+  if (!cliente || !causa) {
+    alert('Los campos "Nombre cliente" y "Nombre de la causa" son obligatorios.');
+    return;
+  }
+
+  const newHistEntry = document.getElementById('newHistorial').value.trim();
+  const existingCausa = causas.find(x => x.id === editingId);
+
+  const historial = existingCausa ? [...(existingCausa.historial||[])] : [];
+  if (newHistEntry) {
+    historial.push({
+      texto: newHistEntry,
+      user: getUserName(currentUser),
+      date: new Date().toISOString()
+    });
+  }
+
+  const updated = {
+    id: editingId || genId(),
+    cliente,
+    rut: document.getElementById('f_rut').value.trim(),
+    email: document.getElementById('f_email').value.trim(),
+    celular: document.getElementById('f_celular').value.trim(),
+    causa,
+    tipo: document.getElementById('f_tipo').value,
+    estado: document.getElementById('f_estado').value,
+    tribunal: document.getElementById('f_tribunal').value.trim(),
+    rit: document.getElementById('f_rit').value.trim(),
+    ruc: document.getElementById('f_ruc').value.trim(),
+    plazo: document.getElementById('f_plazo').value,
+    pendientes: window._pendTemp || [],
+    historial,
+    lastUser: getUserName(currentUser),
+    lastDate: new Date().toISOString(),
+  };
+
+  if (editingId) {
+    const idx = causas.findIndex(x => x.id === editingId);
+    causas[idx] = updated;
+  } else {
+    causas.unshift(updated);
+  }
+
+  saveLocal();
+  renderAll();
+  closeModal();
+  syncToSheets(updated);
+}
+
+// ════════════════════════════════
+//  GOOGLE SYNC
+// ════════════════════════════════
+async function syncToSheets(causa) {
+  const url = config.sheetsUrl;
+  if (!url) return;
+  try {
+    setSyncStatus('syncing');
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save', causa, calendarOn: config.calendarOn })
+    });
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('err');
+  }
+}
+
+async function loadFromSheets() {
+  const url = config.sheetsUrl;
+  if (!url) return;
+  try {
+    setSyncStatus('syncing');
+    const r = await fetch(url + '?action=getAll');
+    const data = await r.json();
+    causas = data;
+    saveLocal();
+    renderAll();
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('err');
+  }
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (status === 'ok') { dot.style.background='#4CAF50'; dot.style.animation='pulse 2s infinite'; lbl.textContent='Google Sheets sync'; }
+  else if (status === 'syncing') { dot.style.background='#FFC107'; dot.style.animation='pulse 0.5s infinite'; lbl.textContent='Sincronizando…'; }
+  else { dot.style.background='#aaa'; dot.style.animation='none'; lbl.textContent='Sin conexión Google'; }
+}
+
+async function testConnection() {
+  const url = document.getElementById('sheetsUrl').value.trim();
+  if (!url) { alert('Ingresa la URL del script primero.'); return; }
+  try {
+    setSyncStatus('syncing');
+    const r = await fetch(url + '?action=ping');
+    const d = await r.json();
+    if (d.ok) { setSyncStatus('ok'); alert('✅ Conexión exitosa con Google Sheets.'); }
+    else { setSyncStatus('err'); alert('❌ Error: ' + JSON.stringify(d)); }
+  } catch(e) {
+    setSyncStatus('err');
+    alert('❌ No se pudo conectar. Verifica la URL y los permisos del script.');
+  }
+}
+
+// ════════════════════════════════
+//  EXPORT CSV
+// ════════════════════════════════
+function exportCSV() {
+  const headers = ['ID','Cliente','RUT','Email','Celular','Causa','Tipo','Tribunal','RIT','RUC','Estado','Plazo','Pendientes','Último usuario','Última fecha'];
+  const rows = causas.map(c => [
+    c.id, c.cliente, c.rut, c.email, c.celular, c.causa, c.tipo,
+    c.tribunal, c.rit, c.ruc, c.estado, c.plazo,
+    (c.pendientes||[]).map(p=>p.texto).join(' | '),
+    c.lastUser, c.lastDate
+  ].map(v => `"${(v||'').toString().replace(/"/g,'""')}"`));
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `causas_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ════════════════════════════════
+//  APPS SCRIPT DOWNLOAD
+// ════════════════════════════════
+function downloadScript() {
+  const code = `// ════════════════════════════════════════════
+// GESTOR DE CAUSAS — Google Apps Script Backend
+// Pega este código en script.google.com
+// ════════════════════════════════════════════
+
+const SHEET_ID = 'TU_GOOGLE_SHEET_ID_AQUI';
+const CALENDAR_ID = 'primary'; // o el ID de un calendario específico
+
+function doGet(e) {
+  const action = e.parameter.action;
+  if (action === 'ping') return jsonResponse({ ok: true });
+  if (action === 'getAll') return jsonResponse(getAllCausas());
+  return jsonResponse({ error: 'unknown action' });
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    if (data.action === 'save') {
+      saveCausa(data.causa, data.calendarOn);
+      return jsonResponse({ ok: true });
+    }
+    return jsonResponse({ error: 'unknown action' });
+  } catch(err) {
+    return jsonResponse({ error: err.message });
+  }
+}
+
+function getAllCausas() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Causas');
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  return rows.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => {
+      if (h === 'pendientes' || h === 'historial') {
+        try { obj[h] = JSON.parse(row[i] || '[]'); } catch(e) { obj[h] = []; }
+      } else {
+        obj[h] = row[i];
+      }
+    });
+    return obj;
+  });
+}
+
+function saveCausa(causa, calendarOn) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Causas');
+  const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+  if (headers.length === 0) {
+    // Create headers on first use
+    const h = ['id','cliente','rut','email','celular','causa','tipo','estado','tribunal','rit','ruc','plazo','pendientes','historial','lastUser','lastDate'];
+    sheet.getRange(1,1,1,h.length).setValues([h]);
+  }
+  const hdrs = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+  
+  // Find existing row by id
+  const allData = sheet.getDataRange().getValues();
+  const idCol = hdrs.indexOf('id');
+  let rowIdx = -1;
+  for (let i = 1; i < allData.length; i++) {
+    if (allData[i][idCol] === causa.id) { rowIdx = i + 1; break; }
+  }
+  
+  const row = hdrs.map(h => {
+    if (h === 'pendientes' || h === 'historial') return JSON.stringify(causa[h] || []);
+    return causa[h] || '';
+  });
+  
+  if (rowIdx > 0) {
+    sheet.getRange(rowIdx, 1, 1, row.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+  
+  // Google Calendar
+  if (calendarOn && causa.plazo) {
+    try {
+      const cal = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+      const fecha = new Date(causa.plazo + 'T00:00:00');
+      const titulo = 'PLAZO: ' + (causa.causa || '') + ' — ' + (causa.cliente || '');
+      cal.createAllDayEvent(titulo, fecha, {
+        description: 'RIT: ' + (causa.rit||'') + ' RUC: ' + (causa.ruc||'') + ' Tribunal: ' + (causa.tribunal||'')
+      });
+    } catch(e) { /* Calendar not accessible */ }
+  }
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+  const blob = new Blob([code], {type:'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'apps-script-backend.js';
+  a.click();
+}
+
+// ════════════════════════════════
+//  MODAL HELPERS
+// ════════════════════════════════
+function openModal() { document.getElementById('overlay').classList.add('open'); }
+function deleteCausa() {
+  if (!editingId) return;
+  const c = causas.find(x => x.id === editingId);
+  if (!c) return;
+  const confirmar = confirm('¿Eliminar la causa "' + (c.causa || 'sin nombre') + '" de ' + c.cliente + '?\n\nEsta acción no se puede deshacer.');
+  if (!confirmar) return;
+  causas = causas.filter(x => x.id !== editingId);
+  saveLocal();
+  renderAll();
+  closeModal();
+  syncDelete(editingId);
+}
+
+async function syncDelete(id) {
+  const url = config.sheetsUrl || document.getElementById('sheetsUrl').value;
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: id })
+    });
+  } catch(e) {}
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); editingId = null; }
+function overlayClick(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
+
+// ════════════════════════════════
+//  UTILS
+// ════════════════════════════════
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function esc(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
+  } catch(e) { return iso; }
+}
+
+// ════════════════════════════════
+//  DEMO DATA
+// ════════════════════════════════
+function loadDemo() {
+  causas = [
+    {
+      id:'demo1', cliente:'Empresa Constructora Larraín S.A.', rut:'76.123.456-7',
+      email:'legal@larrainsa.cl', celular:'+56 9 8765 4321',
+      causa:'Recurso de protección por paralización obra', tipo:'Judicial',
+      tribunal:'Corte de Apelaciones de Santiago', rit:'12345-2024', ruc:'',
+      estado:'Activo', plazo: futureDate(5),
+      pendientes:[
+        {texto:'Presentar escrito de observaciones', done:false},
+        {texto:'Notificar a contraparte', done:true}
+      ],
+      historial:[
+        {texto:'Se presentó recurso de protección. Acogido a tramitación.',user:'Usuario 1',date:past(30)},
+        {texto:'Corte solicitó informe a la contraparte. Plazo 5 días hábiles.',user:'Usuario 2',date:past(10)},
+      ],
+      lastUser:'Usuario 2', lastDate: past(10)
+    },
+    {
+      id:'demo2', cliente:'Carlos Riquelme Morales', rut:'12.987.654-3',
+      email:'criquelme@gmail.com', celular:'+56 9 5566 7788',
+      causa:'Procedimiento administrativo sancionatorio Seremi Salud', tipo:'Administrativa',
+      tribunal:'Seremi de Salud RM', rit:'', ruc:'A-2024-0089',
+      estado:'Activo', plazo: futureDate(15),
+      pendientes:[{texto:'Enviar descargos al cliente para revisión', done:false}],
+      historial:[
+        {texto:'Formulario de cargos notificado. Iniciamos recopilación de antecedentes.',user:'Usuario 1',date:past(20)},
+      ],
+      lastUser:'Usuario 1', lastDate: past(20)
+    },
+    {
+      id:'demo3', cliente:'Inmobiliaria Pacífico Ltda.', rut:'77.445.223-1',
+      email:'gerencia@inmpac.cl', celular:'+56 9 4433 2211',
+      causa:'Demanda ordinaria cobro de pesos', tipo:'Judicial',
+      tribunal:'5° Juzgado Civil de Santiago', rit:'C-34521-2023', ruc:'',
+      estado:'Suspendido', plazo: futureDate(45),
+      pendientes:[],
+      historial:[
+        {texto:'Causa suspendida por acuerdo entre partes. Negociación extrajudicial en curso.',user:'Usuario 2',date:past(5)},
+      ],
+      lastUser:'Usuario 2', lastDate: past(5)
+    },
+    {
+      id:'demo4', cliente:'María González Pérez', rut:'15.234.567-K',
+      email:'mgonzalez@mail.com', celular:'+56 9 9988 7766',
+      causa:'Liquidación de sociedad conyugal', tipo:'Judicial',
+      tribunal:'14° Juzgado de Familia', rit:'F-5678-2024', ruc:'',
+      estado:'Terminado', plazo:'',
+      pendientes:[],
+      historial:[
+        {texto:'Sentencia definitiva ejecutoriada. Causa terminada.',user:'Usuario 1',date:past(2)},
+      ],
+      lastUser:'Usuario 1', lastDate: past(2)
+    }
+  ];
+  saveLocal();
+  renderAll();
+}
+
+function futureDate(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+}
+
+function past(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
+// Start
+init();
+// Load demo if empty
+if (causas.length === 0) loadDemo();
+</script>
+</body>
+</html>
